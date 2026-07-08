@@ -1,12 +1,11 @@
 <div align="center"><img src="/images/readme.gif" width="650" ></div>
 
-# Tinder matchflow agent 
+# 🔥 Tinder matchflow agent 
 ### Your automatic dating assistant 😎
 
 Tinder matchflow automates the process of writing and arranging dates with girls on Tinder, enabling you to generate romantic meetings with almost zero effort. Your only role is to like the profiles that catch your eye. After that, Tinder matchflow comes into the play. It initiates a conversation with the girl, using details from her profile, continues by building an emotional bond and highlighting your attractive traits, and finishes by arranging a meeting and giving you a push-up on your phone with her number.
 
-
-## How it works (with a wink 😏)
+## How it works
 Tinder matchflow is your digital mate working a 24/7 shift and never having an "off day". You do exactly one thing — swipe right on the profiles you like. The dirty work (the actual talking) is handled by the machine. Under the hood it goes like this:
 
 ### 1. The hands — the browser (`driver/`)
@@ -66,16 +65,13 @@ Paste provided id after "AIRTABLE_WORKSPACE_ID=" on `.env` file.
 
 12. Now you set up! 
 
-### PC usage
+### Usage
 
 1. Open Tinder matchflow folder in terminal. Activate envinronment as in step for of installation.
 2. Start Tinder matchflow using `python main.py --head`. `--head` argument means we are starting it in head mode (non-headless) to see on our screen how it perform.
 3. After Tinder matchflow browser window will appear, on your old browser window paste `localhost:8080/start_tnd` to open tinder. Wait until you get response "200" in browser, it will take a while. Do not send next requests until you get response for a preious.
-5. Use `localhost:8080/opener` to Tinder matchflow send opening message to last matched girl.
-6. When girl respond, run 'localhost:8080/respond'. Tinder matchflow will open first unreaded message and will continue conversation. Advanced: You can use `localhost:8080/respond/<girl_nr>`, where instead of <girl_nr> provide nr 1-8 of girl from conversations list. Useful where you accasionally clicked on girl that responded you and unreaded message sign dissapeared.
-7. Play around the app! When you get known with it, deploy it on raspberry for fully authomatic usage.
-
-
+5. Use `localhost:8080/ui` to open Tinder matchflow 
+6. Play around the app! When you get known with it, deploy it on raspberry for fully authomatic usage.
 
 
 ## Configuration
@@ -120,6 +116,7 @@ When going to date organized by Tinder matchflow, I recommend you to tell your m
 
 ## Contribution
 
+While improving prompts, pick-up rules knowledge base or scripts in AI_logic folder, use `localhost:8080/reload` to reload changes immidiatelly without restarting whole the application (which is time-consuming). 
 
-
-While improving prompts, pick-up rules knowledge base or scripts in AI_logic folder, use `localhost:8080/reload` to reload changes immidiatelly without restarting whole the application (which is time-consuming).
+## Kudos 
+This application would not have been created if not for the original fork of the tinderGPT application created by Grigorij-Dudnik, the application introduces significant improvements to selenium, LLM model updates, and UI/Admin logic 
