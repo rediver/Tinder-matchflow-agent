@@ -1,4 +1,4 @@
-<div align="center"><img src="/images/readme.gif" width="650" ></div>
+<div align="center"><img src="/images/admin.png" width="650" ></div>
 
 # 🔥 Tinder matchflow agent 
 ### Your automatic dating assistant 😎
