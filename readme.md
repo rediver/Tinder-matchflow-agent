@@ -42,7 +42,7 @@ There's also a web panel (`/ui`) where you can watch live stats (uptime, message
 ## Installation
 While for a regular (production hehe) use it's recommended to use Raspberry Pi, or any other computer that you can leave turned on day and night, I suggest to try application first on your PC. PC installation process is simplier and doesn't requeres having Raspberry Pi, while allow you to test application and decide if you want to use it further.
 
-### PC Installation
+### Installation
 
 1. Clone repository 
 2. Go to repository `cd Tinder-matchflow-agent`
@@ -73,6 +73,12 @@ Paste provided id after "AIRTABLE_WORKSPACE_ID=" on `.env` file.
 5. Use `localhost:8080/ui` to open Tinder matchflow 
 6. Play around the app! When you get known with it, deploy it on raspberry for fully authomatic usage.
 
+### UI 
+•  Scan conversations — a tab using /pending to find unanswered chats.
+•  Edit prompts — read/write AI prompts via /prompts (opener, analyzer, commander_step1/2, writer, user_context).
+•  Edit pipeline — /pipeline (read/write AI_logic/pipeline_config.json).
+•  View stats — the Stats tab pulls from /stats (driver status, uptime, API calls, model, language, city).
+•  Reload AI modules — /reload (no app restart).
 
 ## Configuration
 Beyond the installation steps, Tinder matchflow is tuned through a few files. Nothing here needs a code change unless noted.
