@@ -1,9 +1,43 @@
 <div align="center"><img src="/images/readme.gif" width="650" ></div>
 
-# TinderGPT 
-### Your automatic dating assistant
+# Tinder matchflow agent 
+### Your automatic dating assistant 😎
 
 TinderGPT automates the process of writing and arranging dates with girls on Tinder, enabling you to generate romantic meetings with almost zero effort. Your only role is to like the profiles that catch your eye. After that, TinderGPT comes into the play. It initiates a conversation with the girl, using details from her profile, continues by building an emotional bond and highlighting your attractive traits, and finishes by arranging a meeting and giving you a push-up on your phone with her number.
+
+
+## How it works (with a wink 😏)
+TinderGPT is your digital mate working a 24/7 shift and never having an "off day". You do exactly one thing — swipe right on the profiles you like. The dirty work (the actual talking) is handled by the machine. Under the hood it goes like this:
+
+### 1. The hands — the browser (`driver/`)
+Tinder has no friendly public API for us, so TinderGPT simply **pretends to be a human**. `TinderConnector` drives a real Firefox instance through Selenium: it clicks the *Messages* tab, watches for the **red dot** on unread conversations, opens a chat, reads the history and types replies.
+To avoid looking like a bot that answers in 0.2 seconds, it takes random breaks — it "thinks about what to write" (`sleep 3–6 s`) and "taps on the keyboard" (`sleep 6–11 s`). Classic fake hesitation, just like before a first date.
+
+### 2. The brain — the AI logic (`AI_logic/`)
+This is where the magic happens. There are two main modes:
+
+**🎣 Opener (`/opener`)**
+The bot reads the girl's bio (About me, Interests, Essentials, and even her answers to Tinder prompts), sends it to GPT, and gets back a personalized pick-up line. No generic "hey, what's up?" — unless that's what you want.
+
+**💬 Responding (`/respond`, `/respond_new`)**
+This is the interesting part. A reply isn't produced in a single shot, but by a **three-person crisis team** (three separate model calls):
+1. **Analyzer** — the psychologist. Reads the conversation and decides which stage we're at:
+   - **Stage 1 (building rapport):** learn a few facts about her, build the "image of an unavailable guy" once, and tell one fun story.
+   - **Stage 2 (closing the deal):** propose a meeting, build comfort, and extract a phone number / contact.
+2. **Commander** — the strategist. Based on the stage, it decides what the next message should be about and picks *tags* (e.g. "Bond", "Storytelling", "Suggesting meeting"). Each tag pulls matching pick-up rules from the knowledge base (`rule_base/rules_db.sqlite`).
+3. **Writer** — the copywriter. Takes the strategy, the rules, your context (`user_context.txt`), personality, city and language, and writes the final message. It also applies **mirroring** — if she writes briefly, so does it; if she rambles, it replies longer. And it deliberately sends **only one message** at a time (to avoid awkward double-texting).
+
+### 3. Memory (Airtable)
+The bot has no "dating amnesia". After each conversation it stores a summary of what it already knows about a given person in Airtable, so next time it continues the thread instead of asking the same thing twice. Bonus: the memory is shared across devices.
+
+### 4. Happy end 🎉
+When the Analyzer detects that the girl shared a contact (phone, Insta, whatever), TinderGPT **ends the conversation** and sends you a **phone notification via Pushbullet** saying something like *"I planned a date with {name}"*. It also marks that person as `not_to_rise` so it won't message them again. Your turn now, human.
+
+### 5. Autopilot (`scheduler.py`)
+On a Raspberry Pi you can run the scheduler, which every day at **random times** (within defined time windows) fires the sessions itself: open Tinder → reply to everyone → send openers → "rise" old conversations → close. The randomness is there so it doesn't look like a machine acting to the exact second.
+
+### Bonus: control panel
+There's also a web panel (`/ui`) where you can watch live stats (uptime, messages sent, model, last action) and **edit the prompts and pipeline without restarting the app** (`/reload`).
 
 
 ## Installation
@@ -11,8 +45,8 @@ While for a regular (production hehe) use it's recommended to use Raspberry Pi, 
 
 ### PC Installation
 
-1. Clone repository `git clone https://github.com/GregorD1A1/TinderGPT`
-2. Go to repository `cd TinderGPT`
+1. Clone repository 
+2. Go to repository `cd Tinder-matchflow-agent`
 3. Create virtual envinronment with `python -m venv env`
 4. Activate envinronment with `env\Scripts\activate` on Windows or `source env/bin/activate` on Linux
 5. Install dependencies `pip install -r requirements.txt`
@@ -29,8 +63,8 @@ Now we need to set up Airtable to TinderGPT be available remember informations a
 After to to main page -> "All workspaces" -> click on "My first workspace". When you entered workspace, at the adress bar of your browser you'll find workspace id as shown on the image. IMPORTANT: Question mark at the end is not part of the workspace id.
 ![Airtable workspace](images/Airtable_workspace.png)
 Paste provided id after "AIRTABLE_WORKSPACE_ID=" on `.env` file.
-12. Pushbullet: Pushbullet needed to get phone notification every time TinderGPT receives contact from girl. If you just testing application for a first time, you can skip that step for now and return to it later. Go to pushbullet.com, at "My account" create access token and paste it after "PUSHBULLET_API_KEY=". Install pushbullet app on your phone and connect it with computer.
-13. Now you set up! 
+
+12. Now you set up! 
 
 ### PC usage
 
@@ -43,17 +77,41 @@ Paste provided id after "AIRTABLE_WORKSPACE_ID=" on `.env` file.
 
 
 
-### Raspberry Pi installation
-1. You need to have at least RPi 4 (maybe 3 is also ok, should be tested) with at least 4 GB of RAM.
-2. Install Ubuntu desctop version. You can use Raspberry Pi Imager for this. Unfortunatelly, Firefox geckodriver don't work for Raspberry Pi OS, that's why we using Ubuntu.
-3. Proceed with steps 1-7 from PC installation instruction. You'll need to connect RPi to screen or use VNC to create Firefox profile.
-4. If you previosely tried application on PC, just copy '.env' file to Raspberry to work on same girls table. If not, proceed. with steps 8-12 from PC installation.
-5. Now you set up!
 
-### Raspberry Pi usage
-1. Activate virtual envinronment and run `python main.py`. That will start TinderGPT in headless mode. It's recommended to start it as a process or at least use tmux library to be able to return to terminal session after it will be closed.
-2. At another terminal, activate virtual envinronment and run `python scheduler.py`. That will start scheduler module, that sends automatic requests to main module everyday. It's also recommended to start it as a process or at least use tmux library to be able to return to terminal session after it will be closed.
-3. Now your fully automatic process of writing to girls is set up!
+## Configuration
+Beyond the installation steps, TinderGPT is tuned through a few files. Nothing here needs a code change unless noted.
+
+### `.env` variables
+| Variable | Required | Description |
+| --- | --- | --- |
+| `USE_LANGUAGE` | yes | Language the bot writes in, e.g. `USE_LANGUAGE=Polish` (no parentheses). |
+| `CITY` | yes | Your city — used by the Writer when suggesting where to meet. |
+| `PERSONALITY` | no | Free-text personality/tone injected into every Writer call. |
+| `OPENAI_API_KEY` | yes | Your OpenAI API key. |
+| `AIRTABLE_TOKEN` | yes | Airtable personal access token (used as the "memory" backend). |
+| `AIRTABLE_WORKSPACE_ID` | yes | Airtable workspace id where the base is created. |
+| `AIRTABLE_BASE_ID` | auto | Created automatically on first run and appended to `.env`. |
+| `AIRTABLE_TABLE_ID` | auto | Created automatically on first run and appended to `.env`. |
+| `PUSHBULLET_API_KEY` | no | Enables phone notifications when a contact is obtained. Leave empty to disable. |
+| `NOTIFICATIONS_HOOK` | no | Optional webhook URL; a GET is fired with `name_age` and `contact` params when a date is planned. |
+| `USE_TINDEBIELIK` | no | Set to use the experimental TindeBielik fine-tuned model path instead of the default OpenAI Writer. |
+
+> Note: the actual OpenAI model is currently hardcoded to `gpt-5.4-mini` in `AI_logic/opener.py` and `AI_logic/respond.py`. The `OPENAI_MODEL` value is only shown in the `/stats` panel — to change the model, edit those files.
+
+### Pipeline tuning (`AI_logic/pipeline_config.json`)
+Adjust behavior without touching code:
+- `responder.step1_conditions` — how many facts / tools / stories are required before moving from Stage 1 to Stage 2.
+- `responder.custom_tags` — add your own tags (each needs a matching rule in `rules_db.sqlite`).
+- `responder.pre_writer_instructions` — extra instructions injected into every Writer call (globally or per stage).
+- `opener.pre_send_filter` / `opener.custom_instructions` — strip patterns / cap length / append instructions for openers.
+- `global.response_delay_seconds` — the human-like "thinking" and "typing" delays.
+
+### Prompts, context and rules
+- `AI_logic/prompts/*.prompt` — the Opener, Analyzer, Commander (step 1/2) and Writer prompts.
+- `AI_logic/user_context.txt` — facts about you, injected into the Opener and Writer.
+- `AI_logic/rule_base/rules_db.sqlite` — pick-up rules keyed by tag.
+
+All of the above can be edited live from the web panel (`/ui`, Prompts tab) or via the `/prompts` and `/pipeline` endpoints. After editing, hit `localhost:8080/reload` to apply changes without restarting the app.
 
 
 ## AI dating good practices
@@ -61,6 +119,7 @@ When going to date organized by TinderGPT, I recommend you to tell your match, t
 
 
 ## Contribution
-While application is already working, there still a lot of things to improve. I'm appreciate if you want to contribute to the project. 
+
+
 
 While improving prompts, pick-up rules knowledge base or scripts in AI_logic folder, use `localhost:8080/reload` to reload changes immidiatelly without restarting whole the application (which is time-consuming).
