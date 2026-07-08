@@ -15,23 +15,26 @@ class TinderConnector():
     def __init__(self, driver):
         self.driver = driver
         # xpathes
-        self.message_tab_xpath = "//aside[1]/nav[2]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/button[1]"
-        self.match_tab_xpath = "//aside[1]/nav[2]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/button[1]"
-        self.new_msg_flag_xpath = "//a[1]/div[1]/div[1]/div[2]"
-        "/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/aside[1]/nav[2]/div[1]/div[1]/div[1]/div[3]/div[2]/div[3]/ul[1]/li[1]/a[1]/div[1]/div[1]/div[2]"
-        "/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/aside[1]/nav[2]/div[1]/div[1]/div[1]/div[3]/div[2]/div[3]/ul[1]/li[2]/a[1]/div[1]/div[1]/div[2]"
-        self.icons_xpath = "//div[1]/div[1]/div[3]/div[1]/ul[1]/li['.']/a[1]/div[1]/div[1]"
-        self.messages_xpath = "//main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div['.']/div[1]/div[2]"
-        self.written_girl_bio_xpath = "//main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[2]"
-        self.unwritten_girl_full_bio_xpath = "//div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[2]"
-        self.unwritten_girl_short_bio_xpath = "//div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[2]/section[1]/div[1]"
-        self.written_girl_name_age_xpath = "//div[2]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]"
-        self.main_page_element_for_wait = "//main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]"
-        self.text_area_xpath = "//div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/form[1]/textarea[1]"
-        self.return_to_main_page_xpath = "//div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/a[1]/button[1]/*"
-        self.name_xpath = "//div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/h1[1]/span[1]"
+        self.message_tab_xpath = "//button[normalize-space(text())='Messages']"
+        self.match_tab_xpath = "//button[normalize-space(text())='Matches']"
+        # red dot = Sq(14px) circle with brand background color
+        self.new_msg_flag_xpath = (
+            "//a[contains(@href,'/app/messages/') and @aria-label"
+            " and not(contains(@aria-label,'Start chat'))"
+            " and .//*[contains(@class,'background-brand') and contains(@class,'Bdrs(50%')]]"
+        )
+        self.icons_xpath = "//a[contains(@aria-label,'Start chat')]"
+        self.messages_xpath = "//span[contains(@class,'text D(ib)')]"
+        self.written_girl_bio_xpath = "//textarea[@placeholder='Type a message']"
+        self.unwritten_girl_full_bio_xpath = "//h2[normalize-space(text())='Essentials']/ancestor::section[1]"
+        self.unwritten_girl_short_bio_xpath = "//h2[normalize-space(text())='Essentials']/ancestor::section[1]"
+        self.written_girl_name_age_xpath = "//h1[contains(@class,'display-1-strong')]"
+        self.main_page_element_for_wait = "//button[normalize-space(text())='Messages']"
+        self.text_area_xpath = "//textarea[@placeholder='Type a message']"
+        self.return_to_main_page_xpath = "//a[normalize-space(text())='Back']"
+        self.name_xpath = "//h1[contains(@class,'display-1-strong')]"
         self.close_tnd_gold_enforser_xpath = "/html[1]/body[1]/div[2]/main[1]/div[1]/div[1]/div[3]/button[2]/span[1]"
-        self.not_opened_girls_css_selector = 'ul > li.P\(8px\)'
+        self.not_opened_girls_css_selector = r'ul > li.P\(8px\)'
 
         current_dir = os.path.dirname(os.path.realpath(__file__))
         self.project_dir = os.path.dirname(os.path.dirname(current_dir))
@@ -46,6 +49,13 @@ class TinderConnector():
                 ExpCon.presence_of_element_located((By.XPATH, self.main_page_element_for_wait)))
         except TimeoutException:
             time.sleep(random.uniform(0, 10))
+        # wait for loading screen overlay to clear
+        try:
+            Wait(self.driver, 20).until(
+                ExpCon.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+        except TimeoutException:
+            pass
 
         # delay to let gold enforser to appear
         time.sleep(random.uniform(2, 3))
@@ -70,43 +80,271 @@ class TinderConnector():
         print('Messages sent')
         time.sleep(random.uniform(1, 4))
         # return to main page
-        self.driver.find_element('xpath', self.return_to_main_page_xpath).click()
-        time.sleep(random.uniform(1, 4))
+        self.driver.get('https://tinder.com/app/matches')
+        time.sleep(random.uniform(1, 3))
 
     # girl_nr is number of girl from the top of the list of message history
     def get_msgs(self, girl_nr=None):
         self.enter_messages(girl_nr)
         messages = self.driver.find_elements('xpath', self.messages_xpath)
         print('messages found')
-        # cut off last 8 messages
-        messages = messages[-8:]
+        messages = messages[-20:]  # last 20 for better context
+        return align_messages(messages)
 
-        message_prompt = align_messages(messages)
-
-        return message_prompt
+    def get_msgs_by_id(self, chat_id: str):
+        """Navigate directly to a chat by Tinder chat ID (hex string from URL)."""
+        print(f'navigating directly to chat {chat_id}')
+        self.driver.get(f'https://tinder.com/app/messages/{chat_id}')
+        try:
+            Wait(self.driver, 20).until(
+                ExpCon.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+        except TimeoutException:
+            pass
+        Wait(self.driver, 60).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.written_girl_bio_xpath)))
+        print('message history entered by ID')
+        time.sleep(random.uniform(1.5, 3))
+        messages = self.driver.find_elements('xpath', self.messages_xpath)
+        print('messages found')
+        return align_messages(messages[-20:])
 
     def enter_messages(self, girl_nr=None):
         print('trying to get messages')
-        # open message tab
+        # navigate to matches page and click Messages tab — most reliable path
+        self.driver.get('https://tinder.com/app/matches')
+        Wait(self.driver, 60).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.message_tab_xpath)))
+        # wait for loading screen overlay to disappear before clicking
+        try:
+            Wait(self.driver, 15).until(
+                ExpCon.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+        except TimeoutException:
+            pass
         self.driver.find_element('xpath', self.message_tab_xpath).click()
+        # wait for conversation links to appear
+        Wait(self.driver, 30).until(
+            ExpCon.presence_of_element_located(
+                (By.XPATH, "//a[contains(@href,'/app/messages/') and @aria-label]")))
         time.sleep(random.uniform(1, 1.5))
-        # entering message history based on number
-        numbered_girl_xpath = f"//div[1]/div[1]/div[3]/div[2]/div[3]/ul[1]/li[{girl_nr}]"
         if girl_nr:
+            # Messages tab conversations: aria-label = name only (no 'Start chat')
+            numbered_girl_xpath = (
+                f"(//a[contains(@href,'/app/messages/') and @aria-label"
+                f" and not(contains(@aria-label,'Start chat'))])[{girl_nr}]"
+            )
             self.driver.find_element('xpath', numbered_girl_xpath).click()
         else:
             self.driver.find_element('xpath', self.new_msg_flag_xpath).click()
 
-        # waiting to all message load
+        # waiting for chat to load
         Wait(self.driver, 30).until(ExpCon.presence_of_element_located((By.XPATH, self.written_girl_bio_xpath)))
         print('message history entered')
         time.sleep(random.uniform(1.5, 4))
 
-    def count_new_messages(self):
-        # open message tab
-        self.driver.find_element('xpath', self.message_tab_xpath).click()
-        time.sleep(random.uniform(1, 2))
+    def respond_to_unread(self, limit=None):
+        """Navigate to messages list, click each unread (red dot) conversation,
+        read messages, call AI, send response, return to list, repeat."""
+        import AI_logic.respond
+        from AI_logic.airtable import get_record, upsert_record
 
+        processed = 0
+        max_rounds = limit or 20
+
+        for _ in range(max_rounds):
+            # navigate to messages list each iteration (fresh elements)
+            self.driver.get('https://tinder.com/app/matches')
+            Wait(self.driver, 60).until(
+                ExpCon.presence_of_element_located((By.XPATH, self.message_tab_xpath)))
+            try:
+                Wait(self.driver, 15).until(
+                    ExpCon.invisibility_of_element_located(
+                        (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+            except TimeoutException:
+                pass
+            self.driver.find_element('xpath', self.message_tab_xpath).click()
+            Wait(self.driver, 30).until(
+                ExpCon.presence_of_element_located(
+                    (By.XPATH, "//a[contains(@href,'/app/messages/') and @aria-label]")))
+            time.sleep(random.uniform(1, 1.5))
+
+            # find first unread conversation (red dot)
+            unread = self.driver.find_elements('xpath', self.new_msg_flag_xpath)
+            if not unread:
+                print('No more unread conversations found')
+                break
+
+            print(f'Clicking unread conversation ({processed + 1})')
+            unread[0].click()
+
+            # wait for chat to load
+            try:
+                Wait(self.driver, 15).until(
+                    ExpCon.invisibility_of_element_located(
+                        (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+            except TimeoutException:
+                pass
+            Wait(self.driver, 30).until(
+                ExpCon.presence_of_element_located((By.XPATH, self.written_girl_bio_xpath)))
+            print('message history entered')
+            time.sleep(random.uniform(1.5, 3))
+
+            # read messages and name
+            messages_els = self.driver.find_elements('xpath', self.messages_xpath)
+            messages = align_messages(messages_els[-20:])
+            name_age = self.get_name_age()
+            print(f'Responding to {name_age}')
+
+            # call AI
+            try:
+                response = AI_logic.respond.respond_to_girl(name_age, messages)
+                if response:
+                    self.send_messages(response)
+            except Exception as e:
+                print(f'AI error for {name_age}: {e}')
+                # return to list even on error
+                self.driver.get('https://tinder.com/app/matches')
+
+            processed += 1
+            print(f'Done {processed} conversations')
+
+        print(f'respond_to_unread finished: {processed} processed')
+        return processed
+
+    def get_unread_conversations(self, max_convos=20):
+        """Returns list of chat IDs that have unread messages (first max_convos checked)."""
+        self.driver.get('https://tinder.com/app/matches')
+        Wait(self.driver, 60).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.message_tab_xpath)))
+        try:
+            Wait(self.driver, 15).until(
+                ExpCon.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+        except TimeoutException:
+            pass
+        self.driver.find_element('xpath', self.message_tab_xpath).click()
+        Wait(self.driver, 30).until(
+            ExpCon.presence_of_element_located(
+                (By.XPATH, "//a[contains(@href,'/app/messages/') and @aria-label]")))
+        time.sleep(random.uniform(1.5, 2.5))
+
+        # find unread conversations using badge selector in one query
+        unread_links = self.driver.find_elements(
+            'xpath', self.new_msg_flag_xpath
+        )[:max_convos]
+
+        # diagnostic: also count all conversations visible
+        all_convos = self.driver.find_elements(
+            'xpath',
+            "//a[contains(@href,'/app/messages/') and @aria-label"
+            " and not(contains(@aria-label,'Start chat'))]"
+        )
+        print(f'Total conversations visible: {len(all_convos)}')
+        print(f'Unread (badge) found: {len(unread_links)}')
+
+        # if badge selector found nothing, dump badge candidates for debugging
+        if not unread_links:
+            badges = self.driver.find_elements(
+                By.CSS_SELECTOR, '[class*="badge"]')
+            print(f'Badge elements on page: {len(badges)}')
+            for b in badges[:5]:
+                print(f'  badge class: {(b.get_attribute("class") or "")[:80]}')
+
+        unread_ids = []
+        for link in unread_links:
+            href = link.get_attribute('href') or ''
+            chat_id = href.split('/app/messages/')[-1]
+            if chat_id:
+                unread_ids.append(chat_id)
+        print(f'Unread chat IDs: {unread_ids}')
+        return unread_ids
+
+    # ── helpers shared by scan methods ────────────────────────
+    def _open_messages_list(self):
+        """Navigate to /app/matches and click the Messages tab."""
+        self.driver.get('https://tinder.com/app/matches')
+        Wait(self.driver, 60).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.message_tab_xpath)))
+        try:
+            Wait(self.driver, 15).until(
+                ExpCon.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+        except TimeoutException:
+            pass
+        self.driver.find_element('xpath', self.message_tab_xpath).click()
+        Wait(self.driver, 30).until(
+            ExpCon.presence_of_element_located(
+                (By.XPATH, "//a[contains(@href,'/app/messages/') and @aria-label]")))
+        time.sleep(random.uniform(1, 1.5))
+
+    def _click_conversation(self, position: int):
+        """Click the Nth conversation (1-indexed) in the Messages list."""
+        xpath = (
+            f"(//a[contains(@href,'/app/messages/') and @aria-label"
+            f" and not(contains(@aria-label,'Start chat'))])[{position}]"
+        )
+        self.driver.find_element('xpath', xpath).click()
+        try:
+            Wait(self.driver, 15).until(
+                ExpCon.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, '[class*="loadingScreen"]')))
+        except TimeoutException:
+            pass
+        Wait(self.driver, 25).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.written_girl_bio_xpath)))
+        time.sleep(random.uniform(0.8, 1.5))
+
+    def scan_pending(self, n: int = 5):
+        """Scan first n conversations. Return list of those where last message is from Girl.
+        Each result: {position, name, last_message, preview_messages}
+        """
+        results = []
+        self._open_messages_list()
+
+        for pos in range(1, n + 1):
+            try:
+                print(f'Scanning conversation {pos}/{n}')
+                self._click_conversation(pos)
+
+                # read last 8 messages
+                els = self.driver.find_elements('xpath', self.messages_xpath)
+                raw = align_messages(els[-8:] if len(els) >= 8 else els)
+                name = self.get_name_age()
+
+                # check if last non-empty line is from Girl
+                lines = [l for l in raw.strip().split('\n') if l.strip()]
+                if lines and lines[-1].startswith('Girl:'):
+                    last_msg = lines[-1][5:].strip()
+                    results.append({
+                        'position':         pos,
+                        'name':             name,
+                        'last_message':     last_msg,
+                        'preview':          raw.strip(),
+                    })
+                    print(f'  → pending: {name} | {last_msg[:60]}')
+                else:
+                    print(f'  → ok (last msg is yours or empty): {name}')
+
+            except Exception as e:
+                print(f'  → error at position {pos}: {e}')
+
+            # back to list for next iteration
+            if pos < n:
+                self._open_messages_list()
+
+        print(f'scan_pending done: {len(results)} pending out of {n} scanned')
+        return results
+
+    def count_new_messages(self):
+        self.driver.get('https://tinder.com/app/matches')
+        Wait(self.driver, 60).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.message_tab_xpath)))
+        self.driver.find_element('xpath', self.message_tab_xpath).click()
+        Wait(self.driver, 30).until(
+            ExpCon.presence_of_element_located(
+                (By.XPATH, "//a[contains(@href,'/app/messages/') and @aria-label]")))
+        time.sleep(random.uniform(1, 2))
         return len(self.driver.find_elements('xpath', self.new_msg_flag_xpath))
 
     def count_not_opened_girls(self):
@@ -124,27 +362,68 @@ class TinderConnector():
         print(f'Got name_age: {name_age}')
         return name_age
 
-    def get_bio(self, girl_nr=1):
+    def get_bio(self, girl_nr=0):
         print('get bio function')
-        self.driver.find_element('xpath', self.match_tab_xpath).click()
-        time.sleep(random.uniform(2, 4))
-        icons = self.driver.find_elements('xpath', self.icons_xpath)
-        if len(icons) == 1:
+        self.driver.get('https://tinder.com/app/matches')
+        Wait(self.driver, 30).until(
+            ExpCon.presence_of_element_located((By.XPATH, self.match_tab_xpath)))
+        time.sleep(random.uniform(2, 3))
+        # filter out /app/recs links — those are special matches that don't open a chat modal
+        all_icons = self.driver.find_elements('xpath', self.icons_xpath)
+        icons = [i for i in all_icons
+                 if '/app/messages/' in (i.get_attribute('href') or '')]
+        print(f'Match icons with chat thread: {len(icons)}')
+        if not icons:
             print('No girls to start a conversation with')
             return
-        # number in square brackets is a number of girl to write (from 1)
         icons[girl_nr].click()
         time.sleep(3)
         Wait(self.driver, 45).until(ExpCon.presence_of_element_located((By.XPATH, self.name_xpath)))
         name = self.driver.find_element('xpath', self.name_xpath).text
-        # choose short or long bio dependant it short is long enough
+        # collect profile sections: About me, Interests, Essentials, custom prompts
+        bio_parts = []
+        priority_sections = ['About me', 'O mnie', 'Interests', 'Zainteresowania']
+        other_sections = ['Essentials', 'Lifestyle', 'Basics']
+        # grab sections by their h2 heading
+        for heading in priority_sections + other_sections:
+            try:
+                section = self.driver.find_element(
+                    'xpath',
+                    f"//h2[normalize-space(text())='{heading}']/ancestor::section[1]"
+                )
+                text = section.text.strip()
+                if text and len(text) > 5:
+                    bio_parts.append(text)
+            except NoSuchElementException:
+                pass
+        # also grab custom Tinder prompt answers (h2 + sibling content)
         try:
-            bio = self.driver.find_element('xpath', self.unwritten_girl_short_bio_xpath).text
-        except NoSuchElementException:
-            bio = self.driver.find_element('xpath', self.unwritten_girl_full_bio_xpath).text
-        else:
-            if len(bio) < 50:
+            custom_h2s = self.driver.find_elements(
+                'xpath',
+                "//h2[contains(@class,'Mstart') and not(contains(text(),'About')) "
+                "and not(contains(text(),'Interest')) and not(contains(text(),'Essential')) "
+                "and not(contains(text(),'Lifestyle')) and not(contains(text(),'Basic')) "
+                "and not(contains(text(),'Looking')) and not(contains(text(),'Reply')) "
+                "and not(contains(text(),'conversation'))]"
+            )
+            for h2 in custom_h2s[:3]:  # max 3 custom prompts
+                q = h2.text.strip()
+                try:
+                    ans_el = h2.find_element('xpath', 'following-sibling::*[1]')
+                    ans = ans_el.text.strip()
+                    if q and ans and len(ans) > 3:
+                        bio_parts.append(f"{q}\n{ans}")
+                except NoSuchElementException:
+                    pass
+        except Exception:
+            pass
+        bio = '\n\n'.join(bio_parts) if bio_parts else ''
+        # fallback
+        if not bio:
+            try:
                 bio = self.driver.find_element('xpath', self.unwritten_girl_full_bio_xpath).text
+            except NoSuchElementException:
+                bio = ''
 
         return name, bio
 
@@ -183,7 +462,7 @@ class TinderConnector():
 # misc functions
 def align_messages(messages):
     your_color = 'rgb(255, 255, 255)'
-    her_color = 'rgb(33, 38, 46)'
+    her_color = 'rgb(36, 38, 42)'
     message_prompt = ''
     for message in messages:
         if message.value_of_css_property('color') == your_color:

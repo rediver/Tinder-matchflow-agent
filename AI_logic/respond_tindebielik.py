@@ -2,19 +2,18 @@ import os
 import json
 import requests
 from langchain.prompts import PromptTemplate
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import StrOutputParser
-from langchain.chains.openai_functions import create_structured_output_runnable
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
 from AI_logic.rule_base.rules_db_conn import query_rule, query_tindebielik_finetune_rule
 from AI_logic.airtable import get_record, upsert_record
 from AI_logic.inference_tindebielik import inference_tindebielik
 from dotenv import load_dotenv, find_dotenv
 from pushbullet import Pushbullet
 from tenacity import retry, stop_after_attempt, wait_fixed
-from langchain.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 # api keys import
-load_dotenv(find_dotenv())
+load_dotenv(find_dotenv(), override=True)
 notifications_hook = os.getenv('NOTIFICATIONS_HOOK')
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -75,18 +74,18 @@ class CommanderStep2Output(BaseModel):
     tags: list = Field(..., description='Choose tags among "Suggesting meeting", "Comfort", "Providing meeting details", "Ask for contact". Make sure you are writing only the tags directly related to your suggestion. Write tags in the array like ["tag1", "tag2"], even if you proposing single tag.')
 
 
-Analyzer = ChatOpenAI(model='gpt-4-1106-preview', temperature=0)
-Commander = ChatOpenAI(model='gpt-4-1106-preview', temperature=0.4)
-Writer = ChatOpenAI(model='gpt-4', temperature=0.7)
+Analyzer = ChatOpenAI(model='gpt-5.4-mini', temperature=0)
+Commander = ChatOpenAI(model='gpt-5.4-mini', temperature=0.4)
+Writer = ChatOpenAI(model='gpt-5.4-mini', temperature=0.7)
 
-analyzer_chain = create_structured_output_runnable(AnalyzerOutput, Analyzer, analyzer_prompt)
+analyzer_chain = analyzer_prompt | Analyzer.with_structured_output(AnalyzerOutput)
 writer_chain = writer_prompt | Writer | StrOutputParser()
 
 def commander_chain(future_step):
     if future_step == 'step1':
-        return create_structured_output_runnable(CommanderStep1Output, Commander, commander_step1_prompt)
+        return commander_step1_prompt | Commander.with_structured_output(CommanderStep1Output)
     else:
-        return create_structured_output_runnable(CommanderStep2Output, Commander, commander_step2_prompt)
+        return commander_step2_prompt | Commander.with_structured_output(CommanderStep2Output)
 
 
 # retry decorator to retry if openai request didn't return

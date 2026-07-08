@@ -1,0 +1,44 @@
+{
+  "_comment": "TinderGPT pipeline extensions. Edit via panel Prompts tab or directly.",
+
+  "responder": {
+    "step1_conditions": {
+      "_comment": "Conditions to complete step1. All must be met to move to step2.",
+      "bond_info_count": 2,
+      "unavailable_used": true,
+      "story_told": true
+    },
+    "custom_tags": {
+      "_comment": "Add custom tags here. Each tag needs a matching rule in rules_db.sqlite.",
+      "examples": ["Humor", "Teasing", "Intellectual"]
+    },
+    "pre_writer_instructions": {
+      "_comment": "Extra instructions injected into every Writer call.",
+      "always": "",
+      "if_step1": "",
+      "if_step2": ""
+    },
+    "post_send_hooks": []
+  },
+
+  "opener": {
+    "pre_send_filter": {
+      "_comment": "Strip these patterns from opener before sending.",
+      "strip_leading_quotes": true,
+      "max_words": 40
+    },
+    "custom_instructions": {
+      "_comment": "Extra instructions appended to opener prompt.",
+      "always": ""
+    }
+  },
+
+  "global": {
+    "response_delay_seconds": {
+      "min_think": 3,
+      "max_think": 6,
+      "min_type": 6,
+      "max_type": 11
+    }
+  }
+}

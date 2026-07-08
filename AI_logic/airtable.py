@@ -6,7 +6,7 @@ from airtable import Airtable
 from dotenv import load_dotenv, find_dotenv
 
 
-load_dotenv(find_dotenv())
+load_dotenv(find_dotenv(), override=True)
 
 token = os.environ['AIRTABLE_TOKEN']
 workspace_id = os.environ['AIRTABLE_WORKSPACE_ID']

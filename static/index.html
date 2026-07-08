@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TinderGPT</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <header class="hdr">
+    <span class="logo">🔥 TinderGPT</span>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+
+  <main id="main"></main>
+
+  <!-- ── Tab: Control ──────────────────────────────────────── -->
+  <template id="tpl-control">
+    <div class="two-col">
+      <div class="ctrl-col">
+
+        <section class="sec">
+          <h4>Session</h4>
+          <button data-call="/start_tnd">▶ Start TND</button>
+          <button data-call="/close">✕ Close</button>
+          <button data-call="/reload">↺ Reload AI</button>
+          <button data-call="/">? Status</button>
+        </section>
+
+        <section class="sec">
+          <h4>Respond</h4>
+          <button data-call="/respond_new">⚡ respond_new (all unread)</button>
+          <div class="row">
+            <button data-call-fn="respondNewLimit">⚡ limit=</button>
+            <input type="number" id="c-limit" value="3" min="1" max="20">
+          </div>
+          <div class="row">
+            <button data-call-fn="respondNr">💬 respond/</button>
+            <input type="number" id="c-rnr" value="1" min="1" max="50">
+          </div>
+          <div class="row">
+            <button data-call-fn="respondId">💬 by chat ID</button>
+            <input type="text" id="c-cid" placeholder="63e22e4b...">
+          </div>
+        </section>
+
+        <section class="sec">
+          <h4>Opener</h4>
+          <button data-call="/opener">💘 opener (next)</button>
+          <div class="row">
+            <button data-call-fn="openerNr">💘 opener/</button>
+            <input type="number" id="c-onr" value="0" min="0" max="50">
+          </div>
+          <div class="row">
+            <button data-call-fn="batchOpeners">💘 batch/</button>
+            <input type="number" id="c-bnr" value="3" min="1" max="20">
+          </div>
+        </section>
+
+        <section class="sec">
+          <h4>Maintenance</h4>
+          <button data-call="/rise">🔥 rise</button>
+          <button data-call="/clear_base">🗑 clear_base</button>
+        </section>
+
+      </div>
+      <div class="log-col">
+        <div class="log-hdr">
+          <span>Console</span>
+          <button class="sm" id="c-clear-log">✕ clear</button>
+        </div>
+        <div class="log" id="c-log"><span class="dim">— log —</span></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ── Tab: Prompts ──────────────────────────────────────── -->
+  <template id="tpl-prompts">
+    <div class="two-col">
+      <div class="prm-list" id="p-list"></div>
+      <div class="prm-ed">
+        <div class="prm-title" id="p-title">Select a prompt</div>
+        <div class="prm-desc"  id="p-desc"></div>
+        <textarea id="p-textarea" spellcheck="false" placeholder="Loading…"></textarea>
+        <div class="row">
+          <button id="p-save">💾 Save</button>
+          <button id="p-save-reload">💾 Save + Reload AI</button>
+          <span class="status" id="p-status"></span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ── Tab: Architecture ─────────────────────────────────── -->
+  <template id="tpl-arch">
+    <div class="arch-wrap">
+      <div class="arch-flows">
+
+        <div class="flow-col">
+          <h3>💘 Opener flow</h3>
+          <div class="flow-body">
+            <div class="step"><span class="step-n">1</span>
+              <div class="card sel">
+                <div class="card-name">Match Tab <span class="tag sel">SELENIUM</span></div>
+                <div class="card-sub">Find <code>a[aria-label*='Start chat']</code> filtered to <code>/app/messages/</code> href</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">2</span>
+              <div class="card sel click" data-prompt="user_context">
+                <div class="card-name">get_bio <span class="tag hint">click to edit</span></div>
+                <div class="card-sub">Scrape: About me · Interests · Essentials · Tinder prompts</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">3</span>
+              <div class="card ai click" data-prompt="opener">
+                <div class="card-name">Opener GPT <span class="tag ai">AI</span> <span class="tag hint">click to edit</span></div>
+                <div class="card-sub">gpt-5.4-mini · temp 0.8</div>
+                <div class="card-io">in: <em>bio · user_context · language</em></div>
+                <div class="card-io">out: opener text</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">4</span>
+              <div class="card sel">
+                <div class="card-name">Strip quotes <span class="tag sel">FILTER</span></div>
+                <div class="card-sub"><code>.strip().strip('"')</code></div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">5</span>
+              <div class="card sel">
+                <div class="card-name">send_messages <span class="tag sel">SELENIUM</span></div>
+                <div class="card-sub">Type 3–6s delay · 6–11s type · Enter</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">6</span>
+              <div class="card sel">
+                <div class="card-name">Return to /app/matches</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-col">
+          <h3>💬 Responder flow</h3>
+          <div class="flow-body">
+            <div class="step"><span class="step-n">1</span>
+              <div class="card sel">
+                <div class="card-name">Unread detector <span class="tag sel">SELENIUM</span></div>
+                <div class="card-sub">Red dot: <code>Bgc($c-ds-background-brand)</code> + <code>Bdrs(50%)</code></div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">2</span>
+              <div class="card sel">
+                <div class="card-name">Click conversation <span class="tag sel">SELENIUM</span></div>
+                <div class="card-sub">Wait loadingScreen clear · wait textarea</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">3</span>
+              <div class="card sel">
+                <div class="card-name">get_msgs</div>
+                <div class="card-sub">Last 8 <code>span.text D(ib)</code> · white=You · rgb(36,38,42)=Girl</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">4</span>
+              <div class="card ai click" data-prompt="analyzer">
+                <div class="card-name">Analyzer <span class="tag ai">AI</span> <span class="tag hint">click to edit</span></div>
+                <div class="card-sub">gpt-5.4-mini · temp 0</div>
+                <div class="card-io">in: <em>messages · summary</em></div>
+                <div class="card-io">out: <em>future_step · summary · contact</em></div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="branch">
+              <div class="bl">├─ if contact detected</div>
+              <div class="step"><span class="step-n"></span>
+                <div class="card stop">
+                  <div class="card-name">Notify + STOP</div>
+                  <div class="card-sub">Pushbullet · Airtable not_to_rise=True</div>
+                </div>
+              </div>
+              <div class="bl last">└─ else →</div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">5a</span>
+              <div class="card ai click" data-prompt="commander_step1">
+                <div class="card-name">Commander S1 <span class="tag ai">AI</span> <span class="tag hint">click to edit</span></div>
+                <div class="card-sub">temp 0.4 · when <code>step=step1</code></div>
+                <div class="card-io">tags: <em>Bond · Attractive guy image · Storytelling</em></div>
+              </div>
+            </div>
+            <div class="step mt3"><span class="step-n">5b</span>
+              <div class="card ai click" data-prompt="commander_step2">
+                <div class="card-name">Commander S2 <span class="tag ai">AI</span> <span class="tag hint">click to edit</span></div>
+                <div class="card-sub">temp 0.4 · when <code>step=step2</code></div>
+                <div class="card-io">tags: <em>Meeting · Comfort · Ask for contact</em></div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">6</span>
+              <div class="card db">
+                <div class="card-name">rules_db.sqlite <span class="tag db">DB</span></div>
+                <div class="card-sub">Fetch rule text for each tag</div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">7</span>
+              <div class="card ai click" data-prompt="writer">
+                <div class="card-name">Writer <span class="tag ai">AI</span> <span class="tag hint">click to edit</span></div>
+                <div class="card-sub">gpt-5.4-mini · temp 0.7 · → JSON {messages:[...]}</div>
+                <div class="card-io">in: <em>messages · summary · rules</em></div>
+                <div class="card-io"><em>commander_tags · commander_reasoning · user_context</em></div>
+              </div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">8</span>
+              <div class="card sel"><div class="card-name">send_messages <span class="tag sel">SELENIUM</span></div></div>
+            </div>
+            <div class="arr">↓</div>
+            <div class="step"><span class="step-n">9</span>
+              <div class="card db">
+                <div class="card-name">Airtable upsert <span class="tag db">DB</span></div>
+                <div class="card-sub">Save summary · last_contact</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pl-section">
+        <div class="pl-title">⚙ pipeline_config.json</div>
+        <div class="pl-row">
+          <textarea id="a-pltx" spellcheck="false" placeholder="Loading…"></textarea>
+          <div class="pl-btns">
+            <button id="a-save">💾 Save</button>
+            <button id="a-save-reload">💾 Save + Reload</button>
+            <span class="status" id="a-status"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </template>
+
+  <!-- ── Tab: Stats ───────────────────────────────────────── -->
+  <template id="tpl-stats">
+    <div class="stats-wrap">
+
+      <div class="stats-header">
+        <div class="stat-card" id="s-driver">
+          <div class="stat-dot" id="s-dot"></div>
+          <div>
+            <div class="stat-label">Driver</div>
+            <div class="stat-val" id="s-driver-val">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏱</div>
+          <div>
+            <div class="stat-label">Uptime</div>
+            <div class="stat-val" id="s-uptime">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💬</div>
+          <div>
+            <div class="stat-label">Messages sent</div>
+            <div class="stat-val" id="s-msgs">—</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📡</div>
+          <div>
+            <div class="stat-label">API calls</div>
+            <div class="stat-val" id="s-calls">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-body">
+        <table class="info-table" id="s-table">
+          <tbody></tbody>
+        </table>
+
+        <div class="stats-actions">
+          <button id="s-refresh">↺ Refresh</button>
+          <label class="auto-lbl">
+            <input type="checkbox" id="s-auto" checked>
+            Auto-refresh (5s)
+          </label>
+          <span class="dim" id="s-ts"></span>
+        </div>
+      </div>
+
+    </div>
+  </template>
+
+  <!-- ── Tab: Pending ───────────────────────────────────── -->
+  <template id="tpl-pending">
+    <div class="pend-wrap">
+
+      <!-- scan toolbar -->
+      <div class="pend-toolbar">
+        <label class="pend-label">Scan first</label>
+        <input type="number" id="pend-n" value="10" min="1" max="50">
+        <label class="pend-label">conversations</label>
+        <button id="pend-scan">🔍 Scan</button>
+        <span class="pend-status" id="pend-st"></span>
+      </div>
+
+      <!-- summary + bulk actions (hidden until scan results arrive) -->
+      <div class="pend-summary" id="pend-summary" style="display:none">
+        <div class="pend-bulk-row">
+          <label class="pend-chk-label">
+            <input type="checkbox" id="pend-select-all">
+            <span>Select all</span>
+          </label>
+          <span id="pend-found" class="pend-found-txt"></span>
+          <button id="pend-bulk-respond" class="pend-bulk-btn" disabled>
+            ↩ Respond to selected (<span id="pend-sel-count">0</span>)
+          </button>
+          <span class="pend-status" id="pend-bulk-st"></span>
+        </div>
+      </div>
+
+      <div class="pend-list" id="pend-list"></div>
+
+    </div>
+  </template>
+
+  <script src="/static/app.js" type="module"></script>
+</body>
+</html>
